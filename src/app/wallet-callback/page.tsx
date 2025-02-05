@@ -13,37 +13,23 @@ function WalletCallbackContent() {
     if (!isBrowser) return;
 
     const accountId = searchParams.get("account_id");
-    const txHash = searchParams.get("transactionHashes");
     const errorMessage = searchParams.get("error");
 
     if (window.opener) {
-      // Send message to parent window
+      // Always send the message, even if there's no accountId
       window.opener.postMessage(
         {
           type: "WALLET_CALLBACK_COMPLETE",
           data: {
             accountId,
-            txHash,
             error: errorMessage,
           },
         },
         window.location.origin
       );
 
-      // If there's a transaction result, save it
-      if (txHash || errorMessage) {
-        window.opener.localStorage.setItem(
-          "lastTransaction",
-          JSON.stringify({
-            success: !errorMessage,
-            error: errorMessage,
-            txHash,
-          })
-        );
-      }
-
-      // Close this window
-      window.close();
+      // Close this window after a short delay to ensure the message is sent
+      setTimeout(() => window.close(), 100);
     } else {
       // If opened directly, redirect to home
       window.location.href = "/";

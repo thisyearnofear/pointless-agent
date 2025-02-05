@@ -130,8 +130,8 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     setIsConnecting(true);
 
     try {
-      await selector.wallet("bitte-wallet");
-      const signInUrl = `https://wallet.bitte.ai/connect?success_url=${encodeURIComponent(
+      const wallet = await selector.wallet("bitte-wallet");
+      const signInUrl = `https://wallet.bitte.ai/connect?callback_url=${encodeURIComponent(
         window.location.origin + "/wallet-callback"
       )}`;
 
@@ -141,6 +141,23 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
           "Could not open wallet window. Please allow popups for this site."
         );
       }
+
+      // Add message listener for wallet connection completion
+      const handleMessage = (event: MessageEvent) => {
+        if (
+          event.origin === window.location.origin &&
+          event.data?.type === "WALLET_CALLBACK_COMPLETE"
+        ) {
+          const { accountId } = event.data.data;
+          if (accountId) {
+            setNearAccountId(accountId);
+          }
+          setIsConnecting(false);
+          window.removeEventListener("message", handleMessage);
+        }
+      };
+
+      window.addEventListener("message", handleMessage);
     } catch (error) {
       console.error("Failed to connect NEAR wallet:", error);
       setError(
