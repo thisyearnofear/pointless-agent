@@ -4,10 +4,14 @@ import { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 
+const isBrowser = typeof window !== "undefined";
+
 function WalletCallbackContent() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
+    if (!isBrowser) return;
+
     const accountId = searchParams.get("account_id");
     const txHash = searchParams.get("transactionHashes");
     const errorMessage = searchParams.get("error");

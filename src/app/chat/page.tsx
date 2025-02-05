@@ -14,6 +14,13 @@ import { Sidebar } from "@/components/Sidebar";
 import { TransactionNotification } from "@/components/TransactionNotification";
 import Image from "next/image";
 import type { Wallet, BrowserWallet } from "@near-wallet-selector/core";
+import dynamic from "next/dynamic";
+
+// Dynamically import BitteAiChat with no SSR
+const DynamicBitteAiChat = dynamic(
+  () => import("@bitte-ai/chat").then((mod) => mod.BitteAiChat),
+  { ssr: false }
+);
 
 export default function ChatPage() {
   const {
@@ -137,7 +144,7 @@ export default function ChatPage() {
                   </button>
                 </div>
               ) : (
-                <BitteAiChat
+                <DynamicBitteAiChat
                   agentId={selectedAgent.id}
                   apiUrl="/api/chat"
                   wallet={walletConfig}

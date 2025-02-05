@@ -44,6 +44,8 @@ const WalletContext = createContext<WalletContextType>({
 
 const WALLET_WINDOW_FEATURES = "width=800,height=600,left=300,top=100";
 
+const isBrowser = typeof window !== "undefined";
+
 export function WalletProvider({ children }: { children: React.ReactNode }) {
   const [selector, setSelector] = useState<WalletSelector | null>(null);
   const [nearAccountId, setNearAccountId] = useState<string | null>(null);
@@ -93,6 +95,8 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 
   // Helper to open wallet in new window
   const openWalletWindow = (url: string): Window | null => {
+    if (!isBrowser) return null;
+
     const walletWindow = window.open(
       url,
       "BitteWallet",
