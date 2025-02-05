@@ -13,22 +13,24 @@ function WalletCallbackContent() {
     if (!isBrowser) return;
 
     const accountId = searchParams.get("account_id");
+    const publicKey = searchParams.get("public_key");
     const errorMessage = searchParams.get("error");
 
     if (window.opener) {
-      // Always send the message, even if there's no accountId
+      // Send complete data back to parent window
       window.opener.postMessage(
         {
           type: "WALLET_CALLBACK_COMPLETE",
           data: {
             accountId,
+            publicKey,
             error: errorMessage,
           },
         },
         window.location.origin
       );
 
-      // Close this window after a short delay to ensure the message is sent
+      // Close this window after a short delay
       setTimeout(() => window.close(), 100);
     } else {
       // If opened directly, redirect to home

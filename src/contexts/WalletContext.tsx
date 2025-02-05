@@ -61,7 +61,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       try {
         const bitteWalletModule = setupBitteWallet({
           walletUrl: "https://wallet.bitte.ai",
-          callbackUrl: window.location.origin,
+          callbackUrl: window.location.origin + "/wallet-callback",
         });
 
         const selector = await setupWalletSelector({
@@ -71,16 +71,12 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
           ],
         });
 
+        // Check if user was previously connected
         const state = selector.store.getState();
         const accounts = state.accounts;
 
         if (accounts.length > 0) {
           setNearAccountId(accounts[0].accountId);
-          try {
-            await selector.wallet();
-          } catch (error) {
-            console.error("Failed to get wallet instance:", error);
-          }
         }
 
         setSelector(selector);
@@ -130,12 +126,14 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     setIsConnecting(true);
 
     try {
-      // Open the wallet window first
-      const signInUrl = `https://wallet.bitte.ai/connect?callback_url=${encodeURIComponent(
+      // Get the signInUrl ready first
+      const signInUrl = new URL("https://wallet.bitte.ai/connect");
+      signInUrl.searchParams.set(
+        "success_url",
         window.location.origin + "/wallet-callback"
-      )}`;
+      );
 
-      const walletWindow = openWalletWindow(signInUrl);
+      const walletWindow = openWalletWindow(signInUrl.toString());
       if (!walletWindow) {
         throw new Error(
           "Could not open wallet window. Please allow popups for this site."
@@ -148,16 +146,11 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
           event.origin === window.location.origin &&
           event.data?.type === "WALLET_CALLBACK_COMPLETE"
         ) {
-          const { accountId } = event.data.data;
+          const { accountId, publicKey } = event.data.data;
           if (accountId) {
             setNearAccountId(accountId);
-            // Update wallet state after successful connection
-            const accounts = selector.store.getState().accounts;
-            const matchingAccount = accounts.find(
-              (account) => account.accountId === accountId
-            );
-            if (matchingAccount) {
-              selector.setActiveAccount(matchingAccount.accountId);
+            if (accountId && publicKey) {
+              selector.setActiveAccount(accountId);
             }
           }
           setIsConnecting(false);
@@ -178,9 +171,11 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   const disconnectNearWallet = async () => {
     if (!selector) return;
     try {
-      const bitteWallet = await selector.wallet("bitte-wallet");
-      await bitteWallet.signOut();
+      const wallet = await selector.wallet("bitte-wallet");
+      await wallet.signOut();
       setNearAccountId(null);
+
+      // The signOut method will handle clearing the account state
     } catch (err) {
       const error = err as TransactionError;
       console.error("Failed to disconnect NEAR wallet:", error);
