@@ -1,6 +1,5 @@
 "use client";
 
-import { BitteAiChat } from "@bitte-ai/chat";
 import type { WalletOptions, EVMWalletAdapter } from "@bitte-ai/chat";
 import { useWallet } from "@/contexts/WalletContext";
 import { useEffect, useState, useRef, Suspense, useCallback } from "react";
@@ -186,7 +185,16 @@ export default function ChatPage() {
       {/* Footer */}
       <footer className="border-t border-gray-100 py-4 mt-auto">
         <div className="max-w-5xl mx-auto px-6 flex items-center justify-center space-x-2">
-          <span className="text-sm text-gray-600">Built with</span>
+          <span className="text-sm text-gray-600">
+            Built{" "}
+            <a
+              href="https://warpcast.com/papa"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              by Papa
+            </a>
+          </span>
           <a
             href="https://docs.bitte.ai/"
             target="_blank"

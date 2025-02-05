@@ -20,9 +20,9 @@ export function Header() {
     <header className="border-b border-gray-100 py-4 md:py-6">
       <div className="max-w-5xl mx-auto px-4 md:px-6 flex justify-between items-center">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold">Pointless AI Chat</h1>
+          <h1 className="text-2xl md:text-3xl font-bold">Chat</h1>
           <p className="text-sm md:text-base text-gray-600 mt-1 md:mt-2">
-            Until it isn&apos;t.
+            Pointless or not? You decide.
           </p>
         </div>
         <div className="flex items-center gap-2 md:gap-4">
