@@ -1,5 +1,3 @@
-import type { EVMWalletAdapter } from "@bitte-ai/chat";
-
 export interface TransactionResult {
   success: boolean;
   error?: string;
@@ -22,12 +20,21 @@ export interface AgentConfig {
   image?: string;
 }
 
+export interface EvmTransaction {
+  chainId: number;
+  to: string;
+  value: bigint;
+  data?: string;
+}
+
 export const AVAILABLE_AGENTS: AgentConfig[] = [
   {
-    id: "near-cow-agent.vercel.app",
-    name: "CoWSwap Assistant",
-    description: "Generates transaction data for CoW Protocol Interactions",
-    category: "DeFi",
+    id: "agent-pointless",
+    name: "Agent Pointless",
+    description:
+      "Your versatile assistant with built-in tools for blockchain, social media, and fun interactions",
+    category: "General",
+    image: "/images/agent-pointless.png",
   },
   {
     id: "coingecko-ai.vercel.app",

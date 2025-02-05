@@ -22,7 +22,7 @@ export function Header() {
         <div>
           <h1 className="text-2xl md:text-3xl font-bold">Pointless AI Chat</h1>
           <p className="text-sm md:text-base text-gray-600 mt-1 md:mt-2">
-            Until it isn't.
+            Until it isn&apos;t.
           </p>
         </div>
         <div className="flex items-center gap-2 md:gap-4">

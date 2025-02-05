@@ -1,9 +1,9 @@
 "use client";
 
 import { BitteAiChat } from "@bitte-ai/chat";
+import type { WalletOptions, EVMWalletAdapter } from "@bitte-ai/chat";
 import { useWallet } from "@/contexts/WalletContext";
-import { useEffect, useState, useRef, Suspense } from "react";
-import type { EVMWalletAdapter } from "@bitte-ai/chat";
+import { useEffect, useState, useRef, Suspense, useCallback } from "react";
 import {
   AVAILABLE_AGENTS,
   type ChatState,
@@ -13,26 +13,34 @@ import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
 import { TransactionNotification } from "@/components/TransactionNotification";
 import Image from "next/image";
+import type { Wallet, BrowserWallet } from "@near-wallet-selector/core";
 
 export default function ChatPage() {
   const {
     selector,
     nearAccountId,
-    evmAddress,
     connectNearWallet,
-    signEvmTransaction,
-    switchEvmChain,
     isConnecting,
-    error,
     lastTransaction,
     clearTransactionResult,
   } = useWallet();
 
-  const [wallet, setWallet] = useState<any>(null);
+  const [wallet, setWallet] = useState<Wallet | undefined>(undefined);
   const [selectedAgent, setSelectedAgent] = useState<AgentConfig>(
     AVAILABLE_AGENTS[0]
   );
   const chatStateRef = useRef<ChatState | null>(null);
+
+  const initWallet = useCallback(async () => {
+    if (selector && !wallet) {
+      try {
+        const walletInstance = await selector.wallet("bitte-wallet");
+        setWallet(walletInstance);
+      } catch (error) {
+        console.error("Failed to setup wallet:", error);
+      }
+    }
+  }, [selector, wallet]);
 
   // Listen for wallet callback messages
   useEffect(() => {
@@ -50,14 +58,14 @@ export default function ChatPage() {
 
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, [selector, wallet]);
+  }, [selector, wallet, initWallet]);
 
   // Save chat state before unload
   useEffect(() => {
     const handleBeforeUnload = () => {
       if (chatStateRef.current) {
         sessionStorage.setItem(
-          "chatState",
+          `chatState-${selectedAgent.id}`,
           JSON.stringify(chatStateRef.current)
         );
       }
@@ -65,49 +73,49 @@ export default function ChatPage() {
 
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, []);
-
-  // Create EVM wallet adapter that matches the expected interface
-  const evmWalletAdapter: EVMWalletAdapter | undefined = evmAddress
-    ? {
-        address: evmAddress,
-        sendTransaction: async (tx: any) => {
-          await signEvmTransaction(tx);
-          return { hash: "" };
-        },
-        switchChain: async ({ chainId }) => {
-          await switchEvmChain(chainId);
-          return { id: chainId };
-        },
-      }
-    : undefined;
-
-  const initWallet = async () => {
-    if (selector && !wallet) {
-      try {
-        const walletInstance = await selector.wallet("bitte-wallet");
-        setWallet(walletInstance);
-      } catch (error) {
-        console.error("Failed to setup wallet:", error);
-      }
-    }
-  };
+  }, [selectedAgent.id]);
 
   useEffect(() => {
     initWallet();
-  }, [selector, wallet]);
+  }, [initWallet]);
 
-  // Get initial chat state
-  const getSavedChatState = (): ChatState | null => {
-    if (typeof window === "undefined") return null;
-    const savedState = sessionStorage.getItem(`chatState-${selectedAgent.id}`);
-    if (!savedState) return null;
-    try {
-      return JSON.parse(savedState);
-    } catch {
-      return null;
-    }
+  // Create a Bitte EVM wallet adapter
+  const evmAdapter: EVMWalletAdapter = {
+    address: nearAccountId || "",
+    sendTransaction: async (variables) => {
+      const url = new URL("https://wallet.bitte.ai/sign-evm");
+      url.searchParams.set("chainId", String(variables.chainId || ""));
+      url.searchParams.set("to", variables.to || "");
+      url.searchParams.set("value", String(variables.value || "0"));
+      url.searchParams.set("data", variables.data?.toString() || "0x");
+      url.searchParams.set(
+        "callback_url",
+        `${window.location.origin}/wallet-callback`
+      );
+
+      window.open(url.toString(), "BitteWallet", "width=800,height=600");
+      return { hash: "0x" }; // Placeholder hash, actual hash comes via callback
+    },
+    switchChain: async ({ chainId }) => {
+      const url = new URL("https://wallet.bitte.ai/switch-chain");
+      url.searchParams.set("chainId", String(chainId));
+      url.searchParams.set(
+        "callback_url",
+        `${window.location.origin}/wallet-callback`
+      );
+
+      window.open(url.toString(), "BitteWallet", "width=800,height=600");
+      return { id: chainId };
+    },
   };
+
+  // Use type assertion to handle version mismatch
+  const walletConfig = {
+    near: {
+      wallet: wallet as Wallet | BrowserWallet, // More specific type assertion
+    },
+    evm: evmAdapter,
+  } as WalletOptions;
 
   return (
     <div className="min-h-screen bg-white text-gray-900 flex flex-col">
@@ -132,10 +140,7 @@ export default function ChatPage() {
                 <BitteAiChat
                   agentId={selectedAgent.id}
                   apiUrl="/api/chat"
-                  wallet={{
-                    near: { wallet },
-                    evm: evmWalletAdapter,
-                  }}
+                  wallet={walletConfig}
                   options={{
                     agentName: selectedAgent.name,
                     agentImage: selectedAgent.image,
