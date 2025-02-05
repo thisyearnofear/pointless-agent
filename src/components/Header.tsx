@@ -3,9 +3,14 @@
 import { useWallet } from "@/contexts/WalletContext";
 import { truncateAddress } from "@/lib/utils";
 import { useState } from "react";
-import { WalletInfo } from "../components/WalletInfo";
+import { WalletInfo } from "./WalletInfo";
+import { usePathname } from "next/navigation";
+import Link from "next/link";
 
 export function Header() {
+  const pathname = usePathname();
+  const isOnChatPage = pathname === "/chat";
+
   const {
     nearAccountId,
     connectNearWallet,
@@ -73,6 +78,14 @@ export function Header() {
               >
                 {isConnecting ? "Connecting..." : "Connect Wallet"}
               </button>
+              {!isOnChatPage && (
+                <Link
+                  href="/chat"
+                  className="px-4 py-2 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors text-sm md:text-base"
+                >
+                  Open Chat
+                </Link>
+              )}
               <button
                 onClick={() => setShowWalletInfo(true)}
                 className="p-2 text-gray-500 hover:text-gray-700"

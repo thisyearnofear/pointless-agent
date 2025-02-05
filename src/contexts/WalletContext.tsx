@@ -130,7 +130,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     setIsConnecting(true);
 
     try {
-      const wallet = await selector.wallet("bitte-wallet");
+      // Open the wallet window first
       const signInUrl = `https://wallet.bitte.ai/connect?callback_url=${encodeURIComponent(
         window.location.origin + "/wallet-callback"
       )}`;
@@ -151,6 +151,14 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
           const { accountId } = event.data.data;
           if (accountId) {
             setNearAccountId(accountId);
+            // Update wallet state after successful connection
+            const accounts = selector.store.getState().accounts;
+            const matchingAccount = accounts.find(
+              (account) => account.accountId === accountId
+            );
+            if (matchingAccount) {
+              selector.setActiveAccount(matchingAccount.accountId);
+            }
           }
           setIsConnecting(false);
           window.removeEventListener("message", handleMessage);
